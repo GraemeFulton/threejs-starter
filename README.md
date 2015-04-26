@@ -1,0 +1,1 @@
+Starter guide for three.js - setting the scene and adding a rotating cube
