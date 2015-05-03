@@ -86,6 +86,12 @@
     this.renderer = new THREE.WebGLRenderer();;
 
     this.starField;
+    
+    
+    //create perlin noise object
+    this.date = new Date();
+    this.pn = new Perlin('rnd' + this.date.getTime());
+    
     this.terrain;
     
   }
@@ -111,7 +117,7 @@
       this.light.addLight(this.scene);
       
       this.terrain = new Terrain;
-      this.terrain.addGround(this.scene);
+      this.terrain.addGround(this.scene, this.pn);
       
     },
     render:function(){
@@ -131,22 +137,18 @@
   /**
    * Ground
    */
-  function Ground(){
+  function Ground(perlinNoise){
     
      //create the ground material using MeshLambert Material
      this.groundMaterial = new THREE.MeshLambertMaterial( {color: 0xffffff, side: THREE.DoubleSide}  );
 
      //create the plane geometry
      this.geometry = new THREE.PlaneGeometry(240,800,300,300);
-
-     //create perlin noise object
-     this.date = new Date();
-     this.pn = new Perlin('rnd' + this.date.getTime());
      
      //make the terrain bumpy with perlin noise
      for (var i = 0, l = this.geometry.vertices.length; i < l; i++) {
           var vertex = this.geometry.vertices[i];
-          var value = this.pn.noise(vertex.x / 10, vertex.y /10, 0);
+          var value = perlinNoise.noise(vertex.x / 10, vertex.y /10, 0);
           vertex.z = value *6;
       }
       
@@ -174,10 +176,10 @@
   Terrain.prototype={
     
     constructor: Terrain,
-    addGround:function(scene){
+    addGround:function(scene, perlinNoise){
         for ( var z= -1600; z < 1600; z+=800 ) {
     
-  	      var floor = new Ground();
+  	      var floor = new Ground(perlinNoise);
           var ground = floor.ground;
           //rotate 90 degrees around the xaxis so we can see the terrain 
           ground.rotation.x = -Math.PI/-2;
