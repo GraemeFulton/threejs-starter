@@ -110,7 +110,7 @@ function addLight(){
 
   }
 
-  function animateStars() { 
+  function animateScene() { 
         
     // loop through each star
     for(var i=0; i<stars.length; i++) {
@@ -124,7 +124,7 @@ function addLight(){
       if(star.position.z>1000) star.position.z-=2000;   
     }
 
-       // loop through each star
+       // loop through each floor (there's just 2)
     for(var i=0; i<floor.length; i++) {
       
       ground = floor[i]; 
@@ -143,7 +143,7 @@ function addLight(){
     requestAnimationFrame( render );
     //render the scene
     renderer.render( scene, camera );
-    animateStars();
+    animateScene();
   }
   
   init();
