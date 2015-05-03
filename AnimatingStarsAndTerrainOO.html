@@ -1,0 +1,247 @@
+    
+<!doctype html>
+<html lang="en">
+<head>
+  <title>Starfield Tutorial</title>
+  <meta charset="utf-8">
+</head>
+<body style="margin:0px;">
+  
+  <script src="three.js"></script>
+  <script src="perlin.js"></script>
+  <script>
+  
+  /**
+   * Star Object
+   */
+  function Star(){
+	  this.geometry = new THREE.SphereGeometry(0.5, 32, 32);
+	  this.material = new THREE.MeshBasicMaterial( {color: 0xffffff} );
+	  this.starShape = new THREE.Mesh(this.geometry, this.material);
+  }
+  
+  /**
+   * Starfield 
+   */
+  
+  function StarField(){
+    this.stars = [];
+  }
+  
+  /**
+   * Starfield functions
+   */
+  StarField.prototype = {
+    
+    constructor:StarField,
+    addStars:function(scene){
+      // The loop will move from z position of -1000 to z position 1000, adding a random particle at each position. 
+      for ( var z= -1000; z < 1000; z+=20 ) {
+    
+          // Make a sphere (exactly the same as before). 
+          var star = new Star();
+          var sphere = star.starShape;
+    
+          // This time we give the sphere random x and y positions between -500 and 500
+          sphere.position.x = Math.random() * 1000 - 500;
+          sphere.position.y = Math.random() * 1000 - 500;
+    
+          // Then set the z position to where it is in the loop (distance of camera)
+          sphere.position.z = z;
+    
+          // scale it up a bit
+          sphere.scale.x = sphere.scale.y = 2;
+    
+          //add the sphere to the scene
+          scene.add( sphere );
+    
+          //finally push it to the stars array 
+          this.stars.push(sphere); 
+        }
+    },
+    animateStars:function(){
+      // loop through each star
+      for(var i=0; i<this.stars.length; i++) {
+        
+        var star = this.stars[i]; 
+          
+        // move it forward by a 10th of its array position each time 
+        star.position.z +=  i/10;
+          
+        // once the star is too close, reset its z position
+        if(star.position.z>1000) star.position.z-=2000;   
+      }
+    }
+    
+  };
+  
+  /**
+   * Main Visualizer
+   */
+  
+  function Visualizer(){
+   
+    this.camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 1, 1000);
+    this.scene =  new THREE.Scene();
+    this.renderer = new THREE.WebGLRenderer();;
+
+    this.starField;
+    this.terrain;
+    
+  }
+  
+  /**
+   * Visualizer functions
+   */
+  Visualizer.prototype = {
+    
+    constructor: Visualizer,
+    init:function(){
+      this.camera.position.z = 5;
+      //set the size of the renderer
+      this.renderer.setSize( window.innerWidth, window.innerHeight );
+     
+      //add the renderer to the html document body
+      document.body.appendChild( this.renderer.domElement );
+    
+      this.starField = new StarField;
+      this.starField.addStars(this.scene);
+      
+      this.light = new Light();
+      this.light.addLight(this.scene);
+      
+      this.terrain = new Terrain;
+      this.terrain.addGround(this.scene);
+      
+    },
+    render:function(){
+      var localRenderer = this;
+     //get the frame
+     requestAnimationFrame( function(){localRenderer.render();} );
+     //render the scene
+     this.renderer.render( this.scene, this.camera );
+     this.starField.animateStars();
+     this.terrain.animateFloor();
+  
+    }
+    
+  };
+  
+  
+  /**
+   * Ground
+   */
+  function Ground(){
+    
+     //create the ground material using MeshLambert Material
+     this.groundMaterial = new THREE.MeshLambertMaterial( {color: 0xffffff, side: THREE.DoubleSide}  );
+
+     //create the plane geometry
+     this.geometry = new THREE.PlaneGeometry(240,800,300,300);
+
+     //create perlin noise object
+     this.date = new Date();
+     this.pn = new Perlin('rnd' + this.date.getTime());
+     
+     //make the terrain bumpy with perlin noise
+     for (var i = 0, l = this.geometry.vertices.length; i < l; i++) {
+          var vertex = this.geometry.vertices[i];
+          var value = this.pn.noise(vertex.x / 10, vertex.y /10, 0);
+          vertex.z = value *6;
+      }
+      
+      //ensure light is computed correctly
+      this.geometry.computeFaceNormals();
+      this.geometry.computeVertexNormals();
+      
+      //create the ground form the geometry and material
+      this.ground = new THREE.Mesh(this.geometry,this.groundMaterial); 
+  }
+  
+  
+  /**
+   * Terrain array
+   */
+  function Terrain(){
+    
+    this.floor = [];
+    
+  }
+  
+  /**
+   * Terrain functions
+   */
+  Terrain.prototype={
+    
+    constructor: Terrain,
+    addGround:function(scene){
+        for ( var z= -1600; z < 1600; z+=800 ) {
+    
+  	      var floor = new Ground();
+          var ground = floor.ground;
+          //rotate 90 degrees around the xaxis so we can see the terrain 
+          ground.rotation.x = -Math.PI/-2;
+
+          // Then set the z position to where it is in the loop (distance of camera)
+          ground.position.z = z;
+          ground.position.y -=4;
+
+          //add the ground to the scene
+          scene.add(ground); 
+          //finally push it to the ground array 
+          this.floor.push(ground); 
+        }
+    },
+    animateFloor(){
+        // loop through each star
+        for(var i=0; i<this.floor.length; i++) {
+          
+          var ground = this.floor[i]; 
+            
+          // move it forward by a 10th of its array position each time 
+          ground.position.z +=  0.25;
+            
+          // once the star is too close, reset its z position
+          if(ground.position.z>400) ground.position.z-=1600;   
+        }
+    }
+    
+  };
+  
+  /**
+   * Light
+   */
+  function Light(){
+    
+    //use directional light
+    this.directionalLight = new THREE.DirectionalLight( 0xffffff, 0.9);
+    //set the position
+    this.directionalLight.position.set(10, 2, 20);
+    //enable shadow
+    this.directionalLight.castShadow = true;
+    //enable camera 
+    this.directionalLight.shadowCameraVisible = true;
+  }
+  
+  Light.prototype={
+    constructor:Light,
+    addLight:function(scene){
+      //add light to the scene
+      scene.add( this.directionalLight );
+    
+    }
+  };
+  
+
+  
+  
+  
+ var viz = new Visualizer;
+ viz.init();
+ viz.render();
+  
+  
+  </script>
+
+  </body>
+</html>
