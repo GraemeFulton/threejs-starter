@@ -1,0 +1,116 @@
+    
+<!doctype html>
+<html lang="en">
+<head>
+  <title>Starfield Tutorial</title>
+  <meta charset="utf-8">
+</head>
+<body style="margin:0px;">
+  
+  <script src="three.js"></script>
+  <script src="perlin.js"></script>
+  <script>
+  
+  function Star(){
+	  this.geometry = new THREE.SphereGeometry(0.5, 32, 32);
+	  this.material = new THREE.MeshBasicMaterial( {color: 0xffffff} );
+	  this.starShape = new THREE.Mesh(this.geometry, this.material);
+  }
+  
+  function StarField(){
+    this.stars = [];
+  }
+  
+  StarField.prototype = {
+    
+    constructor:StarField,
+    addStars:function(scene){
+      // The loop will move from z position of -1000 to z position 1000, adding a random particle at each position. 
+      for ( var z= -1000; z < 1000; z+=20 ) {
+    
+          // Make a sphere (exactly the same as before). 
+          var star = new Star();
+          var sphere = star.starShape;
+    
+          // This time we give the sphere random x and y positions between -500 and 500
+          sphere.position.x = Math.random() * 1000 - 500;
+          sphere.position.y = Math.random() * 1000 - 500;
+    
+          // Then set the z position to where it is in the loop (distance of camera)
+          sphere.position.z = z;
+    
+          // scale it up a bit
+          sphere.scale.x = sphere.scale.y = 2;
+    
+          //add the sphere to the scene
+          scene.add( sphere );
+    
+          //finally push it to the stars array 
+          this.stars.push(sphere); 
+        }
+    },
+    animateStars:function(){
+      // loop through each star
+      for(var i=0; i<this.stars.length; i++) {
+        
+        var star = this.stars[i]; 
+          
+        // move it forward by a 10th of its array position each time 
+        star.position.z +=  i/10;
+          
+        // once the star is too close, reset its z position
+        if(star.position.z>1000) star.position.z-=2000;   
+      }
+    }
+    
+  };
+  
+  
+  function Visualizer(){
+    
+    this.date = new Date();
+    this.pn = new Perlin('rnd' + this.date.getTime());
+    this.camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 1, 1000);
+    this.scene =  new THREE.Scene();
+    this.renderer = new THREE.WebGLRenderer();;
+    this.floor = [];
+    this.starField;
+    
+  }
+  
+  Visualizer.prototype = {
+    
+    constructor: Visualizer,
+    init:function(){
+      this.camera.position.z = 5;
+      //set the size of the renderer
+      this.renderer.setSize( window.innerWidth, window.innerHeight );
+     
+      //add the renderer to the html document body
+      document.body.appendChild( this.renderer.domElement );
+    
+      this.starField = new StarField;
+      this.starField.addStars(this.scene);
+    },
+    render:function(){
+      var localRenderer = this;
+     //get the frame
+     requestAnimationFrame( function(){localRenderer.render();} );
+     //render the scene
+     this.renderer.render( this.scene, this.camera );
+     this.starField.animateStars();
+     // animateFloor();
+  
+    }
+    
+  };
+
+  
+ var viz = new Visualizer;
+ viz.init();
+ viz.render();
+  
+  </script>
+
+  </body>
+</html>
